@@ -138,31 +138,20 @@ def run_next_corr(df, unique_syllables, bird_num, save_mode="default", save_fold
     
     valid_pairs = [(s1, s2) for s1, s2 in product(unique_syllables, repeat=2)] # to include self-pairs
 
-    n_plots = len(valid_pairs)
-    n_cols = 4
-    n_rows = (n_plots + n_cols - 1) // n_cols
-
     n = len(unique_syllables)
     corr_matrix = np.full((n, n), np.nan)
     p_val_matrix = np.full((n, n), np.nan)
     size_matrix = np.full((n, n), np.nan)
 
-    if save_mode != "synth":
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 4, n_rows * 4), squeeze=False)
-        fig.suptitle("Repeat Correlation for All Syllable Pairs", fontsize=16)
-
     for idx, (syl1, syl2) in enumerate(valid_pairs):
-        if save_mode != "synth":
-            row, col = divmod(idx, n_cols)
-            ax = axes[row][col]
 
         syl1_counts, syl2_counts = find_syl1_syl2_pairs(df, syl1, syl2)
 
-        # Debug: Print info for self-pairs (syl1 == syl2)
-        if syl1 == syl2:
-            print(f"[DEBUG-SELF] {syl1.upper()} self-pair: sample size = {len(syl1_counts)}")
-            if len(syl1_counts) > 0:
-                print(f"[DEBUG-SELF] Example pairs: {list(zip(syl1_counts, syl2_counts))[:5]}")
+        # # Debug: Print info for self-pairs (syl1 == syl2)
+        # if syl1 == syl2:
+        #     print(f"[DEBUG-SELF] {syl1.upper()} self-pair: sample size = {len(syl1_counts)}")
+        #     if len(syl1_counts) > 0:
+        #         print(f"[DEBUG-SELF] Example pairs: {list(zip(syl1_counts, syl2_counts))[:5]}")
 
         if len(syl1_counts) < MIN_SAMPLE_SIZE or len(syl1_counts) != len(syl2_counts):
             # Print which pair is being skipped and why
@@ -172,8 +161,6 @@ def run_next_corr(df, unique_syllables, bird_num, save_mode="default", save_fold
                 reason = f"n={len(syl1_counts)} < {MIN_SAMPLE_SIZE}"
             print(f"Skipping pair {syl1.upper()}->{syl2.upper()}: {reason}")
             
-            if save_mode != "synth":
-                ax.axis('off')
             i = unique_syllables.index(syl1)
             j = unique_syllables.index(syl2)
             corr_matrix[i, j] = np.nan
@@ -189,48 +176,10 @@ def run_next_corr(df, unique_syllables, bird_num, save_mode="default", save_fold
         p_val_matrix[i, j] = p_value
         size_matrix[i, j] = len(syl1_counts)
 
-        if save_mode != "synth":
-            x_jit = add_jitter(np.array(syl1_counts))
-            y_jit = add_jitter(np.array(syl2_counts))
-
-            # Scatter plot
-            color = 'red' if p_value >= 0.05 else 'steelblue'
-            ax.scatter(x_jit, y_jit, color=color, alpha=0.6, s=10)
-
-            # Stats text
-            ax.text(
-                0.05, 0.95,
-                f"r={r_value:.2f}\np={p_value:.3f}",
-                transform=ax.transAxes,
-                fontsize=9,
-                verticalalignment='top',
-                bbox=dict(boxstyle='round,pad=0.2', fc='white', ec='none', alpha=0.6)
-            )
-
-            ax.set_xlabel(syl1.upper())
-            ax.set_ylabel(syl2.upper())
-            ax.set_title(f"{syl1.upper()} → {syl2.upper()}", fontsize=10)
-
-            ax.set_xlim(left=0)
-            ax.set_ylim(bottom=0)
-
-            # Integer format on ticks
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-            ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
     # Convert to DataFrame with syllable names as labels
     corr_df = pd.DataFrame(corr_matrix, index=unique_syllables, columns=unique_syllables)
     p_val_df = pd.DataFrame(p_val_matrix, index=unique_syllables, columns=unique_syllables)
     size_df = pd.DataFrame(size_matrix, index=unique_syllables, columns=unique_syllables)
-
-    if save_mode != "synth":
-        # Hide any unused subplots
-        for i in range(n_plots, n_rows * n_cols):
-            row, col = divmod(i, n_cols)
-            axes[row][col].axis('off')
-
-        plt.tight_layout(rect=[0, 0, 1, 0.97])
-        plt.show()
 
     print("\ncorr_df\n", corr_df)
     print("\np_val_df\n", p_val_df)
@@ -344,14 +293,14 @@ def run_next_corr(df, unique_syllables, bird_num, save_mode="default", save_fold
 
     for s1 in unique_syllables:
         for s2 in unique_syllables:
+            corr_val = corr_df.loc[s1, s2] if s1 in corr_df.index and s2 in corr_df.columns else np.nan
+            p_val    = p_val_df.loc[s1, s2] if s1 in p_val_df.index and s2 in p_val_df.columns else np.nan
+            n_val    = size_df.loc[s1, s2] if s1 in size_df.index and s2 in size_df.columns else np.nan
 
-            corr_val = corr_df.loc[s1, s2]
-            p_val    = p_val_df.loc[s1, s2]
-            n_val    = size_df.loc[s1, s2]
-
-            if n_val < MIN_SAMPLE_SIZE or np.isnan(n_val):
+            # Determine status
+            if pd.isna(n_val) or n_val < MIN_SAMPLE_SIZE:
                 status = "insufficient_data"
-            elif not np.isnan(p_val) and p_val < 0.05:
+            elif not pd.isna(p_val) and p_val < 0.05:
                 status = "significant"
             else:
                 status = "nonsignificant"
@@ -365,10 +314,8 @@ def run_next_corr(df, unique_syllables, bird_num, save_mode="default", save_fold
                 "status": status
             })
 
-    # Convert to DataFrame and save
     all_corr_df = pd.DataFrame(rows)
     all_corr_df.to_csv(output_path_all, index=False)
-
     print(f"\nSaved ALL NEXT correlations (sig + non-sig + insufficient data) to:\n{output_path_all}\n")
 
 

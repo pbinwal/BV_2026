@@ -3,7 +3,7 @@ get_repeat_data.py
 ==================
 Load preprocessed birdsong data from CSV files and provide it as DataFrames.
 
-This script reads song data (syllable labels, onsets, offsets) that has been
+This script reads song data (syllable labels) that has been
 exported as CSV files. Each bird's data is stored in
 data/bird_N_df.csv and referenced via the corresponding YAML config file
 in yamls/bird_N.yaml.
@@ -11,8 +11,6 @@ in yamls/bird_N.yaml.
 The CSV files contain the following columns:
     - wav_file: name of the original audio file
     - song: string of syllable labels for that file
-    - onsets: space-separated onset times (ms)
-    - offsets: space-separated offset times (ms)
 
 Usage:
     # As a module
@@ -30,16 +28,12 @@ import yaml
 import sys
 
 # Map bird number to unique syllables
-# NOTE: For bird 2, syllables 'g' and 'a' were originally segmented as a single
-# chunk 'a'. In the CSV, 'a' has been expanded to 'ga' in the song labels, but
-# the onsets/offsets still reflect the original single-chunk segmentation
-# (i.e., there is one onset/offset pair for the 'ga' chunk, not separate ones).
 syllables_mapping = {
     "1": ['a', 'u', 'g', 'h', 'e', 'b'],
     "2": ['b', 'c', 'e'],
-    "3": ['b', 'c', 'd', 'e', 'f'],
+    "3": ['b', 'c', 'd', 'e'],
     "4": ['b', 'e', 'k'],
-    "5": ['b', 'e', 'f', 'g', 'h', 'm'],
+    "5": ['b', 'e', 'f'],
     "6": ['b', 'e', 'h', 'm']
 }
 

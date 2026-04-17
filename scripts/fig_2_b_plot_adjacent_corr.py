@@ -12,6 +12,8 @@ are applied in pie_charts.py when compiling data from all birds together.
 
 Usage:
     python plot_adjacent_corr.py
+
+To reproduce Fig 2b: enter first syl= a and second syl = u
 """
 
 import numpy as np
@@ -238,7 +240,7 @@ def run_adjacent_corr(df, unique_syllables, bird_num,
         plt.xlabel("Syllable 2", fontsize=14)
         plt.ylabel("Syllable 1", fontsize=14)
 
-        plt.show()
+        plt.close()  # suppress heatmap display
 
     
     ############ Save ALL adjacent correlations (significant + non-significant + insufficient data) ############
@@ -411,12 +413,10 @@ if __name__ == "__main__":
             plt.tight_layout()
             save_dir = os.path.join(REPO_ROOT, 'figures', 'Figure 2')
             os.makedirs(save_dir, exist_ok=True)
-            fname_base = 'fig2_au_panel_B'
-            svg_path = os.path.join(save_dir, fname_base + '.svg')
+            fname_base = f'fig_2_b_{phrase1}{phrase2}_bird{bird_num}'
             png_path = os.path.join(save_dir, fname_base + '.png')
-            plt.savefig(svg_path, format='svg')
             plt.savefig(png_path, format='png', dpi=300)
-            print(f"Saved scatter plot to:\n{svg_path}\n{png_path}")
+            print(f"Saved scatter plot to:\n{png_path}")
             plt.show()
         else:
             print("Not enough data for this pair to plot.")

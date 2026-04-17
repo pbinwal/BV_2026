@@ -352,37 +352,15 @@ def analyze_correlations(corr_type="adjacent", alpha=0.05):
     return results, ztest_impact
 
 
-def create_ztest_impact_pie_chart(ztest_impact, title, save_path):
+def create_ztest_impact_pie_chart(ztest_impact, title):
     """
-    Pie chart showing z-test impact on BH-significant correlations:
-    remained vs lost significance after z-test.
+    Prints z-test impact summary (remained vs lost significance after z-test).
     """
-    labels = ["Remained Significant\n(After Z-Test)", "Lost Significance\n(After Z-Test)"]
     sizes = [ztest_impact["remained_significant"], ztest_impact["lost_significance"]]
-    colors = ["#6074daff", "#808080"]
-
-    if sum(sizes) == 0:
+    total = sum(sizes)
+    if total == 0:
         return
 
-    fig = plt.figure(figsize=(1.3, 1.3), dpi=300)
-    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
-    ax.pie(
-        sizes,
-        labels=labels,
-        colors=colors,
-        autopct=lambda pct: autopct_format(pct, sizes),
-        textprops={"fontsize": 8},
-    )
-    ax.set_title(title, pad=10, fontsize=10)
-    ax.set_aspect("equal")
-
-    fig.savefig(save_path, dpi=300, bbox_inches="tight", pad_inches=0)
-    fig.savefig(save_path.replace('.png', '.svg'), bbox_inches="tight")
-    print(f"\nSaved: {save_path}")
-    plt.show()
-    plt.close()
-
-    total = sum(sizes)
     print(f"\nZ-Test Impact Summary for {title}:")
     print(f"  Total BH-significant tested: {total}")
     print(f"  Remained significant: {sizes[0]} ({100*sizes[0]/total:.1f}%)")
@@ -462,12 +440,10 @@ def main():
 
     # Z-test impact pies
     print("\n" + "=" * 50)
-    print("Creating Z-Test Impact Pie Charts...")
+    print("Z-Test Impact Summary")
     print("=" * 50)
-    adj_impact_path = os.path.join(save_dir, "adjacent_ztest_impact_pie.png")
-    next_impact_path = os.path.join(save_dir, "next_ztest_impact_pie.png")
-    create_ztest_impact_pie_chart(adjacent_ztest_impact, "Adjacent Correlations\nZ-Test Impact", adj_impact_path)
-    create_ztest_impact_pie_chart(next_ztest_impact, "Next Correlations\nZ-Test Impact", next_impact_path)
+    create_ztest_impact_pie_chart(adjacent_ztest_impact, "Adjacent Correlations\nZ-Test Impact")
+    create_ztest_impact_pie_chart(next_ztest_impact, "Next Correlations\nZ-Test Impact")
 
     # Load pair-detail CSVs for downstream use
     adj_csv = os.path.join(save_dir, "adjacent_piechart_ztest_pairs.csv")
@@ -576,13 +552,12 @@ def main():
     for handle in leg.legend_handles:
         handle.set_edgecolor("none")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, "fig_2_corr_hist.png"), dpi=300, bbox_inches="tight")
-    plt.savefig(os.path.join(save_dir, "fig_2_corr_hist.svg"), bbox_inches="tight")
+    plt.savefig(os.path.join(save_dir, "fig_2_c.png"), dpi=300, bbox_inches="tight")
+    plt.savefig(os.path.join(save_dir, "fig_2_c.svg"), bbox_inches="tight")
     plt.show()
 
-    # Normality tests + IQR bounds
+    # Normality tests
     from scipy.stats import shapiro
-    iqr_bounds = {}
     for corr_type, pos_df, neg_df, nonsig_df in [
         ("Adjacent", adj_pos_corr_df, adj_neg_corr_df, adj_nonsig_df),
         ("Next", next_pos_corr_df, next_neg_corr_df, next_nonsig_df),
@@ -596,13 +571,6 @@ def main():
             stat_sw, p_sw = shapiro(all_rho)
             print(f"\n{corr_type} normality tests (n={len(all_rho)}):")
             print(f"  Shapiro-Wilk: W={stat_sw:.4f}, p={p_sw:.4e}")
-        q1, q3 = np.percentile(all_rho, [25, 75]) if len(all_rho) > 0 else (np.nan, np.nan)
-        iqr = q3 - q1
-        lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
-        iqr_bounds[corr_type] = (lower, upper)
-        outliers = all_rho[(all_rho < lower) | (all_rho > upper)] if len(all_rho) > 0 else np.array([])
-        print(f"  IQR outlier bounds: [{lower:.3f}, {upper:.3f}]")
-        print(f"  Outliers (n={len(outliers)}): {np.round(outliers, 3).tolist()}")
 
 
 if __name__ == "__main__":
