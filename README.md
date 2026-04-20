@@ -34,7 +34,7 @@ Scripts should be run from the `scripts/` directory.
 
 ### Figure 1
 
-**Panel A** — no script required.
+**Panel A** — no script
 
 **Panel B** — `fig_1_b.py` — per-syllable repeat-number distributions. Prompts for bird number.
 
@@ -46,7 +46,7 @@ Scripts should be run from the `scripts/` directory.
 
 ### Figure 2
 
-**Panel A** — no script required.
+**Panel A** — no script 
 
 **Panel B** — `fig_2_b_plot_adjacent_corr.py` — Bird 1, syllable pair a→u.
 
@@ -94,7 +94,7 @@ Scripts should be run from the `scripts/` directory.
 
 **Supplementary Figure 2 (Panels A, B)** — `fig_3_b_elasticity.py` — same script as Figure 3B; supplementary panels saved alongside the main figure output.
 
-**Supplementary Figure 2 (Panel C)** — no script required.
+**Supplementary Figure 2 (Panel C)** — no script 
 
 **Supplementary Figure 3** — `fig_4_c_rf_all_birds.py` — same script as Figure 4C; saves the extended ±4 context SHAP summary to `figures/Supplementary/Supp_3/supp_3.png`.
 
