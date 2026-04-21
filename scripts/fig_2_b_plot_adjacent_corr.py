@@ -1,5 +1,5 @@
 """
-plot_adjacent_corr.py
+fig_2_b_plot_adjacent_corr.py
 =====================
 Compute Spearman correlations between adjacent syllable pairs in song.
 

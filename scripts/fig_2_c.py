@@ -167,6 +167,7 @@ def analyze_correlations(corr_type="adjacent", alpha=0.05):
         observed_df["bird_num"] = bird_num
         all_observed_dfs.append(observed_df)
 
+
     combined_df = pd.concat(all_observed_dfs, ignore_index=True) if all_observed_dfs else pd.DataFrame()
 
     if corr_type == "next":
@@ -174,6 +175,18 @@ def analyze_correlations(corr_type="adjacent", alpha=0.05):
 
     print(f"\nApplying BH correction...")
     combined_df = apply_correction(combined_df)
+
+    # --- Save combined, BH-corrected DataFrame for downstream analysis (same as pie_charts.py) ---
+    if not combined_df.empty:
+        if corr_type == "adjacent":
+            out_dir = os.path.join(REPO_ROOT, "output", "Adjacent Correlations")
+            out_path = os.path.join(out_dir, "Adjacent_Correlations_correction_bh.csv")
+        else:
+            out_dir = os.path.join(REPO_ROOT, "output", "Next Correlations")
+            out_path = os.path.join(out_dir, "Next_Correlations_correction_bh.csv")
+        os.makedirs(out_dir, exist_ok=True)
+        combined_df.to_csv(out_path, index=False)
+        print(f"Saved combined BH-corrected correlations to: {out_path}")
 
     valid_mask = (
         combined_df["status"].isin(["significant", "nonsignificant"]) &

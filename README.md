@@ -19,7 +19,7 @@ data/           — Per-bird song data CSVs (bird_1_df.csv … bird_6_df.csv)
                                                        differences in acoustics (Wohlgemuth, 2010).
                     bird_{n}_context_agnostic.csv    — symmetric; used for next phrase-pair analyses.
 yamls/          — Per-bird configuration files (paths, directories)
-scripts/        — All analysis and plotting scripts
+scripts/        — All analyses and plotting scripts
 output/         — Computed outputs (transition matrices, correlations, etc.)
 figures/        — Saved figure files
 ```
@@ -38,7 +38,10 @@ Scripts should be run from the `scripts/` directory.
 
 **Panel B** — `fig_1_b.py` — per-syllable repeat-number distributions. Prompts for bird number.
 
-**Panels C, D, E, F** — `fig_1_cdef_plot_rpts_by_context.py` — run for required bird and phrase
+> **Prerequisites: Run `plot_trans_diag.py` for all birds to get transition probabilites which are used by CDEFG
+
+**Panels C, D, E, F** — `fig_1_cdef_plot_rpts_by_context.py` — run for required bird and phrase. 
+For Cand E: script used to get only transition probabilities.
 
 **Panel G** — `fig_1_g.py` 
 
@@ -50,7 +53,9 @@ Scripts should be run from the `scripts/` directory.
 
 **Panel B** — `fig_2_b_plot_adjacent_corr.py` — Bird 1, syllable pair a→u.
 
-**Panel C** — `fig_2_c.py` — all birds, run once.
+> **Prerequisites: Run `z_test_corr.py` for all birds Adjacent and Next with savemode = y to get required csvs before proceeding to panel C
+
+**Panel C** — `fig_2_c.py` — all birds, run once. 
 
 **Panel D** — `fig_2_d.py` — Bird 2, syllable C. Requires `fig_2_synth_control.py` to have been run for all birds and `fig_2_g.py` to have been run once first (to generate `output/Correlations by distance z corrected/all_birds_corr_by_dist.csv`).
 
@@ -64,15 +69,15 @@ Scripts should be run from the `scripts/` directory.
 
 ### Figure 3
 
-**Panels A, B** — `fig_3_a_coloured_song`, `fig_3_b_elasticity`
+
+> **Prerequisites: Run `fig_2_c.py` first to get csv that `fig_3_b_elasticity.py` uses.
+**Panels A, B** — `fig_3_a_coloured_song.py`, `fig_3_b_elasticity.py`
 
 **Panels C, E** — `fig_3_ce_example.py` — also produces Panels D and F (see below).
 
 **Panels D, F** — `fig_3_df_all_birds_panels.py` — all birds, run once. Requires `fig_3_ce_example.py` to have been run first to generate the median CSVs in `output/Positions csvs/`.
 
-**Panel G** — `fig_3_time.py` — Bird 2, syllable C, time-of-day example.
-
-**Panel H** — `fig_3_time.py` — all birds, median repeat number vs time of day.
+**Panel G, H** — `fig_3_gh_time.py` — G: Bird 2, syllable C, time-of-day example, H: all birds, median repeat number vs time of day.
 
 *`fig_3_ce_example.py`* collects repeat-by-occurrence and repeat-by-relative-position data across all birds, saves median analysis CSVs and regression results to `output/Positions csvs/`, and generates the example panels (C, E) directly from memory.
 
@@ -80,21 +85,29 @@ Scripts should be run from the `scripts/` directory.
 
 ### Figure 4
 
-> **Prerequisites:** Before running any Figure 4 script, run `rf_by_phrase.py` once for each bird (1–6). This trains the Random Forest models and saves the SHAP importance CSVs that the plotting scripts read.
+> **Prerequisites: Before running any Figure 4 script, run `rf_by_phrase.py` once for each bird (1–6). This trains the Random Forest models and saves the SHAP importance CSVs that the plotting scripts read.
+
+** Panel A** —  no script
 
 **Panel B** — `fig_4_b_example.py` — single bird/syllable SHAP importance bar chart. Prompts for bird number and syllable label.
+inset using `fig_2_d.py`
 
 **Panel C** — `fig_4_c_rf_all_birds.py` — all-birds normalised SHAP importance summary (bar + scatter). Run after `rf_by_phrase.py` has been run for all 6 birds.
 
 ---
-
 ### Supplementary Figures
 
-**Supplementary Figure 1** — `supp_1.py` — z-test distribution panels for Bird 2 (C→B adjacent, C→E next, B→C next). Saved to `figures/Supplementary/Supp_1/supp_1.png`.
+**Supplementary Figure 1** — 
+> **Prerequisites: Run `fig_2_b_plot_adjacent_corr.py` (You can input 'n' if you don't want to save a figure.) and `plot_corr_next.py` and `z_test_corr.py`for all birds before running supp_1_.py. 
 
-**Supplementary Figure 2 (Panels A, B)** — `fig_3_b_elasticity.py` — same script as Figure 3B; supplementary panels saved alongside the main figure output.
+`supp_1.py` — z-test distribution panels for Bird 2 (C→B adjacent, C→E next, B→C next). Saved to `figures/Supplementary/Supp_1/supp_1.png`.
 
-**Supplementary Figure 2 (Panel C)** — no script 
+> **Prerequisites: Run `fig_2_c.py` first to get csv that `fig_3_b_elasticity.py` uses.
+**Supplementary Figure 2 (Panels A, B)** — `fig_3_b_elasticity.py` — same script as Figure 3B; supplementary panels saved alongside the main figure output. 
+
+
+**Supplementary Figure 2 (Panel C)** — no script
+**Supplementary Figure 2 (Panel DE)** — supp_2_de.py
 
 **Supplementary Figure 3** — `fig_4_c_rf_all_birds.py` — same script as Figure 4C; saves the extended ±4 context SHAP summary to `figures/Supplementary/Supp_3/supp_3.png`.
 
@@ -138,7 +151,7 @@ Scripts should be run from the `scripts/` directory.
 
 **`fig_3_df_all_birds_panels.py`** — all-birds median repeat number vs occurrence order and vs position quartile, with overall median and example highlight (Fig 3D, 3F).
 
-**`fig_3_time.py`** — collects repeat-by-time-of-day data across all birds; saves median CSV and regression results to `output/Time of day csvs/`; generates the time-of-day example panel (Fig 3G) and all-birds summary panel (Fig 3H).
+**`fig_3_gh_time.py`** — collects repeat-by-time-of-day data across all birds; saves median CSV and regression results to `output/Time of day csvs/`; generates the time-of-day example panel (Fig 3G) and all-birds summary panel (Fig 3H).
 
 **`rf_by_phrase.py`** — per-bird: trains a Random Forest model predicting repeat number for each syllable type using contextual features (±4 neighbours, song length, occurrence order, relative position, time of day); saves model, CV/OOB scores, and SHAP importance CSV to `output/RF results/per syllable/bird_{n}/{syl}/`.
 

@@ -33,7 +33,7 @@ from pathlib import Path
 
 # Import module functions
 from get_compressed_syntax import load_and_process_data
-from plot_adjacent_corr import run_adjacent_corr
+from fig_2_b_plot_adjacent_corr import run_adjacent_corr
 from plot_corr_next import run_next_corr
 from get_repeat_data import syllables_mapping
 
