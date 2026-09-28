@@ -8,7 +8,7 @@ library(dplyr)
 model_type <- 1  # Default to linear model
 
 # Read the combined CSV
-csv_path <- "C:/Users/priyabinwal/Documents/Priya/Priya PhD Git repos/BV_2026/output/Correlations by distance z corrected/all_birds_corr_by_dist.csv"
+csv_path <- "C:/Users/priyabinwal/Documents/Priya/Priya PhD Git repos/BV_2026_Binwal_Veit_2026/output/Correlations by distance z corrected/all_birds_corr_by_dist.csv"
 df <- read.csv(csv_path)
 
 print("Data loaded. Summary:")
@@ -26,12 +26,17 @@ print(head(df_sig))
 df$Abs_Correlation <- abs(df$Correlation)
 df_sig$Abs_Correlation <- abs(df_sig$Correlation)
 
-print("\n" %+% "="*80)
+cat("\n", paste(rep("=", 80), collapse = ""), "\n", sep = "")
 print("LINEAR MIXED MODEL RESULTS")
-print("="*80)
-print("Formula: Abs_Correlation ~ Distance + (1 | Bird_ID)")
+cat(paste(rep("=", 80), collapse = ""), "\n", sep = "")
+print("Formula: Abs_Correlation ~ Distance + (1 | Bird_ID/Syllable_Pair)")
 print("Data: Significant correlations only")
-print("="*80)
+cat(paste(rep("=", 80), collapse = ""), "\n", sep = "")
+
+lmm_model <- lmer(
+  Abs_Correlation ~ Distance + (1 | Bird_ID/Syllable_Pair),
+  data = df_sig
+)
 
 print(summary(lmm_model))
 
@@ -140,4 +145,4 @@ print(paste("\nTotal unique syllable pairs analyzed:", unique_pairs))
 print(paste("  - Appeared at single distance:", single_distance_pairs))
 print(paste("  - Appeared at multiple distances:", multiple_distance_pairs))
 
-## ...existing code...
+

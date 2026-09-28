@@ -46,7 +46,8 @@ for fallback in ("next_syl", "next_rpt_num"):
     feature_color_map[fallback] = fade_to_white(base_blue, fade_factors[1])
     feature_hatch_map[fallback] = "///" if "rpt_num" in fallback else None
 
-other_features = ["song_length", "target_occurrence_num", "target_relative_pos", "recording_hour"]
+ # other_features = ["song_length", "target_occurrence_num", "target_relative_pos", "recording_hour"]
+other_features = ["song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour"]
 for i, g in enumerate(other_features):
     feature_color_map[g] = reds((i + 2) / 7)
     feature_hatch_map[g] = None
@@ -60,7 +61,8 @@ custom_feature_order = [
     "next_syl_2", "next_rpt_num_2",
     "next_syl_3", "next_rpt_num_3",
     "next_syl_4", "next_rpt_num_4",
-    "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    # "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    "song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour",
 ]
 
 feature_display_labels = {
@@ -84,7 +86,8 @@ feature_display_labels = {
     "next_rpt_num_4":        "+4",
     "song_length":           "song\nlen.",
     "target_occurrence_num": "occ.\nnum.",
-    "target_relative_pos":   "rel.\npos.",
+    # "target_relative_pos":   "rel.\npos.",
+    "target_absolute_pos":   "pos.",
     "recording_hour":        "t.o.d",
 }
 
@@ -100,7 +103,7 @@ def group_individual_features(features_list):
     return grouped
 
 # ── User input ────────────────────────────────────────────────────────────────
-bird_num = input("Enter bird number (1-6): ").strip()
+bird_num = input("Enter bird number (1-8): ").strip()
 if bird_num not in syllables_mapping:
     raise ValueError(f"Bird {bird_num!r} not found in syllables_mapping.")
 
@@ -155,7 +158,8 @@ features_to_keep = {
     "prev_syl_1", "rpt_num_prev_1",
     "next_syl",   "next_syl_1",   "next_rpt_num",   "next_rpt_num_1",
     "next_syl_2", "next_rpt_num_2",
-    "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    # "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    "song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour",
 }
 
 # ── Order features ────────────────────────────────────────────────────────────
@@ -221,7 +225,8 @@ features_to_keep_supp = {
     "next_syl_2", "next_rpt_num_2",
     "next_syl_3", "next_rpt_num_3",
     "next_syl_4", "next_rpt_num_4",
-    "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    # "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    "song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour",
 }
 
 ordered_features_supp = (

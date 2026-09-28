@@ -1,4 +1,4 @@
-# supp_2_de_duration_lmm_without_self.R
+# supp_2_de_duration_lmm.R
 #
 # Tests whether adjacent and next correlation categories differ in delta
 # duration, where delta duration is the absolute difference between the mean
@@ -7,8 +7,7 @@
 # The Python script supp_2_hi_dur_old.py creates the derived input CSV:
 #   data/delta_duration/duration_correlations.csv
 #
-# The model follows supp_2_de_acoustic_lmm.R exactly, replacing acoustic
-# distance with delta_duration:
+# Model:
 #   delta_duration ~ sig_status_aft_all_corr + (1 | bird_id)
 #
 # The script prints model summaries, displays DHARMa residual diagnostics, and
@@ -22,23 +21,8 @@ library(lmerTest)
 library(emmeans)
 library(DHARMa)
 
-# Find the repository root from RStudio or from this script's command-line path.
-repo_root <- tryCatch(
-  dirname(rstudioapi::getActiveDocumentContext()$path) |> dirname(),
-  error = function(e) {
-    script_file <- grep(
-      "^--file=",
-      commandArgs(trailingOnly = FALSE),
-      value = TRUE
-    )
-    if (length(script_file) > 0) {
-      script_path <- sub("^--file=", "", script_file[[1]])
-      dirname(dirname(normalizePath(script_path)))
-    } else {
-      getwd()
-    }
-  }
-)
+# Repo root hard-coded to avoid RStudio active-document detection issues.
+repo_root <- "C:/Users/priyabinwal/Documents/Priya/Priya PhD Git repos/BV_2026_Binwal_Veit_2026"
 
 # Build the path to the derived duration/correlation table.
 duration_csv <- file.path(

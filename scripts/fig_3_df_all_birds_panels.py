@@ -1,13 +1,15 @@
 """fig_3_all_birds_panels.py
 
-Plots all-birds summary panels for occurrence and relative-position analyses.
+Plots all-birds summary panels for occurrence and absolute-position analyses.
 For each panel, every bird/syllable combination is drawn as a grey line, the
 overall median across all is shown as a red dashed line, and the example
 bird/syllable highlighted in the companion script is circled in blue.
 
   fig_3_d_occ.png  — median repeat number vs occurrence order
                              (blue circle: Bird 6 / syllable H)
-  fig_3_f_pos.png  — median repeat number vs position quartile
+    fig_3_f_pos.png  — median repeat number vs absolute position, visualized in
+                       20-syllable bins after excluding positions above the
+                       absolute position 200
                              (blue circle: Bird 1 / syllable U)
 
 Saved as PNG (300 dpi) to figures/Figure 3/.
@@ -80,6 +82,7 @@ plt.tight_layout()
 out = os.path.join(save_dir, "fig_3_d_occ.png")
 plt.savefig(out, dpi=300, bbox_inches="tight")
 plt.savefig(out.replace('.png', '.svg'), bbox_inches="tight")
+plt.show()
 plt.close(fig)
 print(f"Saved: {out}")
 
@@ -89,24 +92,46 @@ print(f"Saved: {out}")
 
 fig, ax = plt.subplots(figsize=(3.8, 3.2), dpi=300)
 
-for (bird, syl), group in pos_df.groupby(["bird_num", "syllable"]):
-    ax.plot(group["quartile"], group["median_repeat_number"],
+position_bin_size = 20
+position_plot_max = 200
+position_percentile = (pos_df["abs_pos"] <= position_plot_max).mean() * 100
+print(
+    f"Position plot: excluding abs_pos > {position_plot_max} "
+    "(visualization only)."
+)
+print(
+    f"Position plot cutoff {position_plot_max} includes "
+    f"{position_percentile:.2f}% of raw position observations."
+)
+print(f"Position plot bin size: {position_bin_size} absolute-position units.")
+plot_pos_df = pos_df[pos_df["abs_pos"] <= position_plot_max].copy()
+plot_pos_df["position_bin"] = (
+    (plot_pos_df["abs_pos"] - 1) // position_bin_size
+) * position_bin_size + 1
+plot_pos_df = (
+    plot_pos_df
+    .groupby(["bird_num", "syllable", "position_bin"], as_index=False)["median_repeat_number"]
+    .median()
+)
+
+for (bird, syl), group in plot_pos_df.groupby(["bird_num", "syllable"]):
+    ax.plot(group["position_bin"], group["median_repeat_number"],
             marker="o", linewidth=1, color="#888888", markersize=3)
 
-overall_pos = pos_df.groupby("quartile")["median_repeat_number"].median().reset_index()
-ax.plot(overall_pos["quartile"], overall_pos["median_repeat_number"],
+overall_pos = plot_pos_df.groupby("position_bin")["median_repeat_number"].median().reset_index()
+ax.plot(overall_pos["position_bin"], overall_pos["median_repeat_number"],
         marker="o", linestyle="--", color="red", markersize=3, linewidth=2, zorder=5)
 
-highlight = pos_df[(pos_df["bird_num"] == 1) & (pos_df["syllable"] == "U")]
-ax.scatter(highlight["quartile"], highlight["median_repeat_number"],
+highlight = plot_pos_df[(plot_pos_df["bird_num"] == 1) & (plot_pos_df["syllable"] == "U")]
+ax.scatter(highlight["position_bin"], highlight["median_repeat_number"],
            s=30, facecolors="none", edgecolors="blue", linewidths=2, zorder=6)
 
-ax.set_xticks([1, 2, 3, 4])
-ax.set_xticklabels([1, 2, 3, 4])
+ax.set_xticks([0, 45, 90, 135, 180])
+ax.set_xticks([22.5, 67.5, 112.5, 157.5], minor=True)
 ax.yaxis.set_major_locator(MultipleLocator(4))
 ax.yaxis.set_minor_locator(MultipleLocator(2))
 ax.set_ylim(0, 32)
-ax.set_xlabel("Quartile", fontsize=11)
+ax.set_xlabel("Position", fontsize=11)
 ax.set_ylabel("Median repeat number", fontsize=11)
 ax.tick_params(axis="both", labelsize=11)
 ax.spines["top"].set_visible(False)
@@ -116,5 +141,6 @@ plt.tight_layout()
 out = os.path.join(save_dir, "fig_3_f_pos.png")
 plt.savefig(out, dpi=300, bbox_inches="tight")
 plt.savefig(out.replace('.png', '.svg'), bbox_inches="tight")
+plt.show()
 plt.close(fig)
 print(f"Saved: {out}")

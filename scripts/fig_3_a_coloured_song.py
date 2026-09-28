@@ -8,7 +8,7 @@ Output (saved to figures/Figure 3/):
   bird_{N}_colour_coded_song.png
   bird_{N}_colour_coded_song.svg
 
-Run: rompts for bird number (1-6) and number of songs to plot.
+Run: prompts for bird number (1-8) and number of songs to plot.
 """
 
 import os

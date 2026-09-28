@@ -1,8 +1,9 @@
 """fig_3_time.py
 
 For all birds, collects repeat-number data binned by time of day (2-hour windows),
-applies a 5% threshold, saves raw and median CSVs, runs a linear regression
-(repeat ~ hour_block), and produces two Figure 3 panels:
+applies a 5% threshold, saves raw and median CSVs, runs a Spearman monotonic test
+(repeat ~ hour_block), and produces two Figure 3 panels. The previous linear
+regression code is retained below as comments.
 
   Example panel (single bird/syllable, stacked histograms):
     fig_3_time_example.png  — Bird 2, syllable C, hour blocks 6, 10, 14, 18
@@ -13,7 +14,7 @@ applies a 5% threshold, saves raw and median CSVs, runs a linear regression
 
 Output CSVs (saved to output/Time of day csvs/):
   repeat_by_time_median.csv  — median repeat number per bird/syllable/hour block
-  time_regression.csv        — linear regression results with FDR + Bonferroni
+    time_regression.csv        — Spearman results with Bonferroni correction
 
 Output figures (saved to figures/Figure 3/):
   fig_3_time_example.png
@@ -57,6 +58,8 @@ PCT_THRESHOLD = 5.0
 TIME_REGEX = {
     "2": r"_(\d{6})\.\d+\.wav$",
     "6": r"_(\d{8,})_part\d+\.wav$",
+    "7": r"_(?:\d{6})_(\d{6})\.\d+\.cbin$",
+    "8": r"_(\d{6})\.\d+\.wav$",
 }
 TIME_REGEX_DEFAULT = r"_(\d{6})\.-?\d+"
 
@@ -121,8 +124,54 @@ median_time_df.to_csv(os.path.join(output_dir, "repeat_by_time_median.csv"), ind
 print(f"Saved: {os.path.join(output_dir, 'repeat_by_time_median.csv')}")
 
 
+# The previous linear-regression analysis is retained below as comments.
 # ══════════════════════════════════════════════════════════════════════════════
 # 2. Linear regression: repeat_number ~ hour_block
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# time_results = []
+#
+# for bird_syll, group in full_time_df.groupby("bird_syllable"):
+#     x = group["hour_block"].values
+#     y = group["repeat_number"].values
+#     if len(x) < 3:
+#         continue
+#     slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+#     rpt_std  = np.std(y, ddof=1)
+#     rpt_mean = np.mean(y)
+#     time_results.append({
+#         "bird_syllable":       bird_syll,
+#         "slope":               slope,
+#         "intercept":           intercept,
+#         "r_squared":           r_value ** 2,
+#         "p_value_uncorrected": p_value,
+#         "std_err":             std_err,
+#         "n":                   len(x),
+#         "repeat_mean":         rpt_mean,
+#         "repeat_std":          rpt_std,
+#     })
+#
+# reg_df = pd.DataFrame(time_results)
+# if not reg_df.empty:
+#     _, p_fdr,  _, _ = multipletests(reg_df["p_value_uncorrected"], method="fdr_bh")
+#     _, p_bonf, _, _ = multipletests(reg_df["p_value_uncorrected"], method="bonferroni")
+#     reg_df["p_value_fdr"]         = p_fdr
+#     reg_df["p_value_bonferroni"]  = p_bonf
+#     reg_df["normalised_slope"]    = reg_df["slope"] / reg_df["repeat_std"]
+#     reg_fp = os.path.join(output_dir, "time_regression.csv")
+#     reg_df.to_csv(reg_fp, index=False)
+#     print(f"Saved: {reg_fp}")
+#
+#     sig_time = reg_df[reg_df["p_value_fdr"] < 0.05]
+#     if not sig_time.empty:
+#         s = sig_time["slope"].values
+#         sn = sig_time["normalised_slope"].values
+#         print(f"  FDR-significant slopes: range=({s.min():.3f}, {s.max():.3f}), mean={s.mean():.3f}, SE={s.std(ddof=1)/len(s)**0.5:.3f}")
+#         print(f"  Standardised: range=({sn.min():.3f}, {sn.max():.3f}), mean={sn.mean():.3f}, SE={sn.std(ddof=1)/len(sn)**0.5:.3f}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 2. Spearman monotonic test: repeat_number ~ hour_block
 # ══════════════════════════════════════════════════════════════════════════════
 
 time_results = []
@@ -132,38 +181,57 @@ for bird_syll, group in full_time_df.groupby("bird_syllable"):
     y = group["repeat_number"].values
     if len(x) < 3:
         continue
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-    rpt_std  = np.std(y, ddof=1)
-    rpt_mean = np.mean(y)
+    rho, p_value = stats.spearmanr(x, y)
+    print(f"  {bird_syll}: rho={rho:.3f}, p={p_value:.4f}")
     time_results.append({
         "bird_syllable":       bird_syll,
-        "slope":               slope,
-        "intercept":           intercept,
-        "r_squared":           r_value ** 2,
+        "spearman_rho":        rho,
         "p_value_uncorrected": p_value,
-        "std_err":             std_err,
         "n":                   len(x),
-        "repeat_mean":         rpt_mean,
-        "repeat_std":          rpt_std,
+        "repeat_mean":         np.mean(y),
+        "repeat_std":          np.std(y, ddof=1),
     })
 
 reg_df = pd.DataFrame(time_results)
 if not reg_df.empty:
-    _, p_fdr,  _, _ = multipletests(reg_df["p_value_uncorrected"], method="fdr_bh")
     _, p_bonf, _, _ = multipletests(reg_df["p_value_uncorrected"], method="bonferroni")
-    reg_df["p_value_fdr"]         = p_fdr
-    reg_df["p_value_bonferroni"]  = p_bonf
-    reg_df["normalised_slope"]    = reg_df["slope"] / reg_df["repeat_std"]
+    reg_df["p_value_bonferroni"] = p_bonf
     reg_fp = os.path.join(output_dir, "time_regression.csv")
     reg_df.to_csv(reg_fp, index=False)
     print(f"Saved: {reg_fp}")
 
-    sig_time = reg_df[reg_df["p_value_fdr"] < 0.05]
-    if not sig_time.empty:
-        s = sig_time["slope"].values
-        sn = sig_time["normalised_slope"].values
-        print(f"  FDR-significant slopes: range=({s.min():.3f}, {s.max():.3f}), mean={s.mean():.3f}, SE={s.std(ddof=1)/len(s)**0.5:.3f}")
-        print(f"  Standardised: range=({sn.min():.3f}, {sn.max():.3f}), mean={sn.mean():.3f}, SE={sn.std(ddof=1)/len(sn)**0.5:.3f}")
+    total_tests = len(reg_df)
+    significant = int((reg_df["p_value_bonferroni"] < 0.05).sum())
+    nonsignificant = total_tests - significant
+    significant_proportion = significant / total_tests
+    nonsignificant_proportion = nonsignificant / total_tests
+    print(
+        "Bonferroni summary: "
+        f"significant = {significant}/{total_tests} "
+        f"({significant_proportion:.1%}), "
+        f"non-significant = {nonsignificant}/{total_tests} "
+        f"({nonsignificant_proportion:.1%})"
+    )
+
+    all_rho = reg_df["spearman_rho"].dropna()
+    significant_rho = reg_df.loc[
+        reg_df["p_value_bonferroni"] < 0.05, "spearman_rho"
+    ].dropna()
+    all_se = all_rho.std(ddof=1) / np.sqrt(len(all_rho))
+
+    print("\n===== Time-of-day rho summary =====")
+    print("Measure: repeat number versus 2-hour recording-time block")
+    print(f"All rho values: range={all_rho.min():.3f} to {all_rho.max():.3f}, "
+          f"mean={all_rho.mean():.3f} +/- SE={all_se:.3f}")
+    if not significant_rho.empty:
+        significant_se = significant_rho.std(ddof=1) / np.sqrt(len(significant_rho))
+        print(
+            f"Bonferroni-significant rho values: range={significant_rho.min():.3f} to "
+            f"{significant_rho.max():.3f}, "
+            f"mean={significant_rho.mean():.3f} +/- SE={significant_se:.3f}"
+        )
+    else:
+        print("Bonferroni-significant rho values: none")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -223,6 +291,7 @@ else:
     out = os.path.join(save_dir, "fig_3_time_example.png")
     fig.savefig(out, dpi=300, bbox_inches="tight")
     fig.savefig(out.replace('.png', '.svg'), bbox_inches="tight")
+    plt.show()
     plt.close(fig)
     print(f"Saved: {out}")
 
@@ -265,5 +334,6 @@ plt.tight_layout()
 out = os.path.join(save_dir, "fig_3_time_all_birds.png")
 plt.savefig(out, dpi=300, bbox_inches="tight")
 plt.savefig(out.replace('.png', '.svg'), bbox_inches="tight")
+plt.show()
 plt.close(fig)
 print(f"Saved: {out}")

@@ -22,7 +22,7 @@ from get_repeat_data import syllables_mapping
 
 
 # Bird number input (or could be command-line argument)
-bird_id = input("Enter bird ID (1-6): ").strip()
+bird_id = input("Enter bird ID (1-8): ").strip()
 print(f"[DEBUG] Bird number entered: {bird_id}")
 
 # Validate bird number and get unique syllables
@@ -87,6 +87,10 @@ target_syllables = syllables_mapping[bird_id]
 print(f"[DEBUG] Target syllables for analysis: {target_syllables}")
 print(f"[DEBUG] Loaded transition probabilities for bird {bird_id} from:\n{probs_file}")
 
+# Retain a context only when it contributes at least 5% of the repeat
+# observations for the syllable whose repeat distribution is being compared.
+CONTEXT_PROPORTION_THRESHOLD = 0.05
+
 # Use all syllables for transition matrix indexing, but only analyze target syllables
 unique_syllables = unique_syllables_all
 
@@ -118,6 +122,41 @@ def get_rpts_cntxt_bef(df, syl1, syl2):
             print(f"[DEBUG] Song {i}: found {len(matches)} matches for pattern '{pattern}'")
     print(f"[DEBUG] Total repeats found (before '{syl2}' after '{syl1}'): {len(repeats_list)}")
     return repeats_list
+
+
+def filter_contexts_by_proportion(repeats_by_pair, target_syllables, which_syl_rpts):
+    """Remove contexts contributing less than 5% of target repeats."""
+    filtered_pairs = {}
+
+    for target_syl in target_syllables:
+        if which_syl_rpts == 1:
+            matching_pairs = {
+                pair: repeats
+                for pair, repeats in repeats_by_pair.items()
+                if pair[0].lower() == target_syl.lower() and repeats
+            }
+        else:
+            matching_pairs = {
+                pair: repeats
+                for pair, repeats in repeats_by_pair.items()
+                if pair[1].lower() == target_syl.lower() and repeats
+            }
+
+        total_repeats = sum(len(repeats) for repeats in matching_pairs.values())
+        if total_repeats == 0:
+            continue
+
+        for pair, repeats in matching_pairs.items():
+            context_fraction = len(repeats) / total_repeats
+            if context_fraction >= CONTEXT_PROPORTION_THRESHOLD:
+                filtered_pairs[pair] = repeats
+            else:
+                print(
+                    f"[DEBUG] Skipping pair {pair}: context proportion "
+                    f"{context_fraction:.3f} < {CONTEXT_PROPORTION_THRESHOLD:.2f}"
+                )
+
+    return filtered_pairs
 
 
 # List of syllables
@@ -237,7 +276,7 @@ def plot_all_repeat_distributions_separate(repeats_by_pair, transition_probs, un
         idx_2 = syllable_index[syl2_upper]
 
         # Check if transition probability is greater than 5%
-        if transition_probs[idx_1, idx_2] > 0.05:  # <-- ADDED 5% THRESHOLD
+        if transition_probs[idx_1, idx_2] >= 0.05:  # <-- ADDED 5% THRESHOLD
             # Only include if the repeating syllable is in target_syllables
             if which_syl_rpts == 1 and syl1.lower() in target_syllables:
                 grouped_by_syllable_end[syl1_upper].append((pair, repeats_list))
@@ -373,7 +412,7 @@ def plot_all_repeat_distributions_together(repeats_by_pair, transition_probs, un
         idx_2 = syllable_index[syl2]
 
         # ADDED: Check if transition probability is greater than 5%
-        if transition_probs[idx_1, idx_2] > 0.05 and repeats_list:  # Only valid pairs with data and >5% probability
+        if transition_probs[idx_1, idx_2] >= 0.05 and repeats_list:  # Only valid pairs with data and >=5% probability
             if which_syl_rpts == 1:
                 grouped_by_syllable_end[syl1].append((pair, repeats_list))
             elif which_syl_rpts == 2:
@@ -437,6 +476,13 @@ if which_syl_rpts == 1:
 else:
     repeats_by_pair = repeats_by_pair_aft
 
+# Apply the context-share filter before plotting or testing distributions.
+repeats_by_pair = filter_contexts_by_proportion(
+    repeats_by_pair,
+    target_syllables,
+    which_syl_rpts,
+)
+
 
 # plot_all_repeat_distributions_together(repeats_by_pair, transition_probs, unique_syllables, which_syl_rpts)
 figures_dict, grouped_by_syllable_end = plot_all_repeat_distributions_separate(repeats_by_pair, transition_probs, unique_syllables, which_syl_rpts)
@@ -498,7 +544,7 @@ for pair, repeats_list in repeats_by_pair.items():
     elif which_syl_rpts == 2 and syl2.lower() in target_syllables:
         is_target = True
     
-    if transition_probs[idx_1, idx_2] > 0.05 and repeats_list and is_target:
+    if transition_probs[idx_1, idx_2] >= 0.05 and repeats_list and is_target:
         valid_pairs[pair] = repeats_list
 
 # Step 2: Group pairs by which syllable repeats and apply figure casing

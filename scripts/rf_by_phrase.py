@@ -41,12 +41,14 @@ bird_num = input("Enter bird number: ").strip()
 
 # Dictionary of valid bird numbers and their unique syllables
 bird_syllables = {
-    "1": ['a', 'u', 'g', 'h', 'e', 'b', 'q'],
-    "2": ['b', 'c', 'e'],
-    "3": ['b', 'c', 'd', 'e'],
-    "4": ['b', 'e', 'k'],
+    "1": ['a', 'u', 'g', 'h', 'e', 'b', 'q', 'l'],
+    "2": ['b', 'c', 'e', 'd', 'f', 'g', 'a'],
+    "3": ['b', 'c', 'd', 'e', 'f', 'i'],
+    "4": ['b', 'e', 'k', 'i'],
     "5": ['b', 'e', 'f', 'g', 'h', 'm', 'i'],
-    "6": ['a', 'b', 'e', 'f', 'h', 'm', 'i'],
+    "6": ['b', 'e', 'h', 'm', 'f', 'a', 'i'],
+    "7": ['b', 'c', 'e', 'f', 'g', 'o', 'a', 'd', 'h', 'j', 'k', 'l'],
+    "8": ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
 }
 # Check if bird_num is valid
 if bird_num not in bird_syllables:
@@ -72,6 +74,12 @@ elif bird_num == "6":
 elif bird_num in ["1", "3", "4", "5"]:
     df['date_str'] = df['wav_file'].str.extract(r'_(\d{6})_')[0]
     df['time_str'] = df['wav_file'].str.extract(r'_(\d{6})\.-?\d+\.cbin')[0]
+elif bird_num == "7":
+    df['date_str'] = df['wav_file'].str.extract(r'_(\d{6})_')[0]
+    df['time_str'] = df['wav_file'].str.extract(r'_(\d{6})\.\d+\.wav$')[0]
+elif bird_num == "8":
+    df['date_str'] = df['wav_file'].str.extract(r'_(\d{6})_')[0]
+    df['time_str'] = df['wav_file'].str.extract(r'_(\d{6})\.\d+\.wav$')[0]
 
 # Drop rows with missing time information (i.e., where regex failed)
 df = df.dropna(subset=['time_str'])
@@ -98,6 +106,8 @@ exclude_target_syllables = {
     "4": ['i'],
     "5": ['i', 'g', 'm', 'h'],
     "6": ['f', 'a', 'i'],
+    "7": ['g', 'o', 'a', 'd', 'h', 'j', 'k', 'l'],
+    "8": ['b', 'c', 'e', 'f', 'h', 'j', 'k', 'n', 'o', 'l'],
 }
 
 
@@ -121,7 +131,7 @@ def calculate_song_length(compressed_song):
 # For each block (syllable) in the song, extract:
 #   - The target syllable and its repeat number
 #   - The occurrence number of this syllable in the song
-#   - The relative position of the block in the song
+#   - The absolute position of the block in the song
 #   - The previous n syllables and their repeat numbers
 #   - The next syllable and its repeat number
 def format_data(s, n):
@@ -133,7 +143,7 @@ def format_data(s, n):
     target_syl = []
     rpt_num_target = []
     target_occurrence_num = []
-    target_relative_pos = []
+    target_absolute_pos = []
     prev_syls = []
     prev_rpt_nums = []
     next_syls = []  # List of lists for next n syllables
@@ -142,14 +152,15 @@ def format_data(s, n):
         target_syllable = letters[i]
         syllables_before = sum(numbers[:i])
         block_start_pos = syllables_before + 1
-        relative_position = block_start_pos / total_song_length
+        # relative_position = block_start_pos / total_song_length
+        absolute_position = block_start_pos
         if target_syllable not in syllable_occurrence_count:
             syllable_occurrence_count[target_syllable] = 0
         syllable_occurrence_count[target_syllable] += 1
         target_syl.append(target_syllable)
         rpt_num_target.append(numbers[i])
         target_occurrence_num.append(syllable_occurrence_count[target_syllable])
-        target_relative_pos.append(relative_position)
+        target_absolute_pos.append(absolute_position)
         previous_syllables = [letters[i - j - 1] for j in range(n)]
         previous_repeat_nums = [numbers[i - j - 1] for j in range(n)]
         prev_syls.append(previous_syllables)
@@ -159,7 +170,7 @@ def format_data(s, n):
         next_repeat_nums = [numbers[i + j + 1] for j in range(n)]
         next_syls.append(next_syllables)
         next_rpt_nums.append(next_repeat_nums)
-    return target_syl, rpt_num_target, target_occurrence_num, target_relative_pos, prev_syls, prev_rpt_nums, next_syls, next_rpt_nums
+    return target_syl, rpt_num_target, target_occurrence_num, target_absolute_pos, prev_syls, prev_rpt_nums, next_syls, next_rpt_nums
 
 song_ids = []
 recording_hours = []
@@ -172,7 +183,7 @@ n = 4  # Number of previous syllables to include as context
 all_target_syl = []  # All target syllables (across all songs)
 all_rpt_num_target = []  # All repeat numbers for targets
 all_target_occurrence_num = []  # All occurrence numbers
-all_target_relative_pos = []  # All relative positions
+all_target_absolute_pos = []  # All absolute positions
 all_prev_syls = []  # All previous n syllables
 all_prev_rpt_nums = []  # All previous n repeat numbers
 all_next_syls = []  # All next syllables
@@ -185,11 +196,11 @@ for song_id, (idx, row) in enumerate(df.iterrows()):
     hour = row["hour"]
     song_length = calculate_song_length(song)
     # Extract features for all blocks in this song
-    target_syl, rpt_num_target, target_occurrence_num, target_relative_pos, prev_syls, prev_rpt_nums, next_syls, next_rpt_nums = format_data(song, n)
+    target_syl, rpt_num_target, target_occurrence_num, target_absolute_pos, prev_syls, prev_rpt_nums, next_syls, next_rpt_nums = format_data(song, n)
     all_target_syl.extend(target_syl)
     all_rpt_num_target.extend(rpt_num_target)
     all_target_occurrence_num.extend(target_occurrence_num)
-    all_target_relative_pos.extend(target_relative_pos)
+    all_target_absolute_pos.extend(target_absolute_pos)
     all_prev_syls.extend(prev_syls)
     all_prev_rpt_nums.extend(prev_rpt_nums)
     all_next_syls.extend(next_syls)
@@ -207,7 +218,7 @@ tree_data = pd.DataFrame({
     "song_length": song_lengths,
     "target_syl": all_target_syl,
     "target_occurrence_num": all_target_occurrence_num,
-    "target_relative_pos": all_target_relative_pos,
+    "target_absolute_pos": all_target_absolute_pos,
     "rpt_num_target": all_rpt_num_target
 })
 # Add previous syllables and repeat numbers as separate columns

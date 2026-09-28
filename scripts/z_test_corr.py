@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from scipy.stats import pearsonr
-from itertools import permutations
+from itertools import product
 import re
 from collections import defaultdict
 import os
@@ -42,7 +42,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Bird number input
 available_birds = ", ".join([f"bird {num}" for num in syllables_mapping.keys()])
-bird_num = input(f"The available birds are {available_birds}\nEnter bird number (1-6): ").strip()
+bird_num = input(f"The available birds are {available_birds}\nEnter bird number (1-8): ").strip()
 
 # Validate bird_num
 if bird_num not in syllables_mapping:
@@ -54,19 +54,8 @@ yaml_path = os.path.join(REPO_ROOT, "yamls", f"bird_{bird_num}.yaml")
 with open(yaml_path, 'r') as f:
     config = yaml.safe_load(f)
 
-# Define syllables based on bird
-if bird_num == "1":
-    rpt_syllables = ['a', 'u', 'g', 'h', 'e', 'b']
-elif bird_num == "2":
-    rpt_syllables = ['b', 'c', 'e']
-elif bird_num == "3":
-    rpt_syllables = ['b', 'c', 'd', 'e']
-elif bird_num == "4":
-    rpt_syllables = ['b', 'e', 'k']
-elif bird_num == "5":
-    rpt_syllables = ['b', 'e', 'f']
-elif bird_num == "6":
-    rpt_syllables = ['b', 'e', 'h', 'm']
+# Use the shared authoritative syllable mapping.
+rpt_syllables = syllables_mapping[bird_num]
 
 # Ask user which analysis to run
 analysis_type = input("Enter 1 for Adjacent correlation or 2 for Next correlation: ").strip()
@@ -256,8 +245,8 @@ n = 100  # number of synthetic iterations
 # Load real data correlations
 df_real = pd.read_csv(real_data_path)
 
-# Generate all ordered pairs (permutations) of syllables
-all_pairs = list(permutations(rpt_syllables, 2))
+# Generate all ordered pairs, including self-pairs, as in plot_corr_next.py.
+all_pairs = list(product(rpt_syllables, repeat=2))
 
 for syllable_pair in all_pairs:
     correlation_values = []

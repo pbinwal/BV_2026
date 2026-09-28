@@ -1,7 +1,6 @@
 __pycache__/
 *.pyc
 # Ignore all data, figures, and output files
-/data/
 /figures/
 /output/
 *.csv

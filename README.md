@@ -1,10 +1,14 @@
-# BV_2026 — Code Repository
+# Binwal_Veit_2026 — Code Repository
 
 This repository contains the analyses and figure-generation scripts accompanying the manuscript.
 
+To cite the pre-print: doi: https://doi.org/10.64898/2026.05.12.724669
+
 ***NOTE: Figures might look aesthetically different from those in the manuscript because of changes that were later made in Inkspace
 
-For code or data-related inquiries please contact xxx
+***NOTE: The R scripts in `scripts/R_scripts/` use hard-coded absolute paths for the repo root. Before running them, update these paths to match your local clone location.
+
+For code or data-related inquiries please contact priya.binwal@uni-tuebingen.de
 
 ---
 
@@ -20,6 +24,7 @@ data/           — Per-bird song data CSVs (bird_1_df.csv … bird_6_df.csv)
                     bird_{n}_context_agnostic.csv    — symmetric; used for next phrase-pair analyses.
 yamls/          — Per-bird configuration files (paths, directories)
 scripts/        — All analyses and plotting scripts
+                  scripts/R_scripts/ contains all R scripts (LMM analyses)
 output/         — Computed outputs (transition matrices, correlations, etc.)
 figures/        — Saved figure files
 ```
@@ -92,7 +97,7 @@ For Cand E: script used to get only transition probabilities.
 **Panel B** — `fig_4_b_example.py` — single bird/syllable SHAP importance bar chart. Prompts for bird number and syllable label.
 inset using `fig_2_d.py`
 
-**Panel C** — `fig_4_c_rf_all_birds.py` — all-birds normalised SHAP importance summary (bar + scatter). Run after `rf_by_phrase.py` has been run for all 6 birds.
+**Panel C** — `fig_4_c_rf_all_birds.py` — all-birds normalised SHAP importance summary (bar + scatter). Run after `rf_by_phrase.py` has been run for all * birds.
 
 ---
 ### Supplementary Figures
@@ -107,7 +112,12 @@ inset using `fig_2_d.py`
 
 
 **Supplementary Figure 2 (Panel C)** — no script
-**Supplementary Figure 2 (Panel DE)** — supp_2_de.py
+
+**Supplementary Figure 2 (Panel DE)** — supp_2_de_pitch_entropy.py 
+and for LMM: scripts\R_scripts\supp_2_fg_pitch_entropy_lmm.R
+
+**Supplementary Figure 2 (Panel FG)** — supp_2_fg_dur.py
+and for LMM: scripts\R_scripts\supp_2_fg_dur_lmm.R
 
 **Supplementary Figure 3** — `fig_4_c_rf_all_birds.py` — same script as Figure 4C; saves the extended ±4 context SHAP summary to `figures/Supplementary/Supp_3/supp_3.png`.
 
@@ -149,11 +159,11 @@ inset using `fig_2_d.py`
 
 **`fig_3_b_elasticity.py`** — calls `elasticity.py` for all birds in memory; produces an all-birds elasticity histogram and adjacent/next elasticity pair scatters (Fig 3B).
 
-**`fig_3_df_all_birds_panels.py`** — all-birds median repeat number vs occurrence order and vs position quartile, with overall median and example highlight (Fig 3D, 3F).
+**`fig_3_df_all_birds_panels.py`** — all-birds median repeat number vs occurrence order and vs position, with overall median and example highlight (Fig 3D, 3F).
 
 **`fig_3_gh_time.py`** — collects repeat-by-time-of-day data across all birds; saves median CSV and regression results to `output/Time of day csvs/`; generates the time-of-day example panel (Fig 3G) and all-birds summary panel (Fig 3H).
 
-**`rf_by_phrase.py`** — per-bird: trains a Random Forest model predicting repeat number for each syllable type using contextual features (±4 neighbours, song length, occurrence order, relative position, time of day); saves model, CV/OOB scores, and SHAP importance CSV to `output/RF results/per syllable/bird_{n}/{syl}/`.
+**`rf_by_phrase.py`** — per-bird: trains a Random Forest model predicting repeat number for each syllable type using contextual features (±4 neighbours, song length, occurrence order, position, time of day); saves model, CV/OOB scores, and SHAP importance CSV to `output/RF results/per syllable/bird_{n}/{syl}/`.
 
 **`fig_4_b_example.py`** — reads the SHAP importance CSV for a single bird/syllable and plots a grouped vertical bar chart coloured by feature class (Fig 4B). Prompts interactively for bird number and syllable.
 

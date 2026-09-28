@@ -34,7 +34,7 @@ from get_repeat_data import REPO_ROOT, syllables_mapping
 
 # ── Config ────────────────────────────────────────────────────────────────────
 DELTA_THRESHOLD  = 0.1
-MIN_SAMPLE_SIZE  = 1000
+MIN_SAMPLE_SIZE  = 800
 BASE_DIR  = os.path.join(REPO_ROOT, "output", "RF results", "per_phrase_rf_models")
 SAVE_DIR  = os.path.join(REPO_ROOT, "figures", "Figure 4")
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -65,7 +65,8 @@ for fallback in ("next_syl", "next_rpt_num"):
 feature_color_map["next_rpt_num_1"] = fade_to_white(base_blue, fade_factors[1])
 feature_hatch_map["next_rpt_num_1"] = "///"
 
-other_features = ["song_length", "target_occurrence_num", "target_relative_pos", "recording_hour"]
+# other_features = ["song_length", "target_occurrence_num", "target_relative_pos", "recording_hour"]
+other_features = ["song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour"]
 for i, g in enumerate(other_features):
     feature_color_map[g] = reds((i + 2) / 7)
     feature_hatch_map[g] = None
@@ -79,7 +80,8 @@ custom_feature_order = [
     "next_syl_2", "next_rpt_num_2",
     "next_syl_3", "next_rpt_num_3",
     "next_syl_4", "next_rpt_num_4",
-    "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    # "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    "song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour",
 ]
 
 features_to_keep = {
@@ -87,7 +89,8 @@ features_to_keep = {
     "prev_syl_1", "rpt_num_prev_1",
     "next_syl",   "next_syl_1",   "next_rpt_num",   "next_rpt_num_1",
     "next_syl_2", "next_rpt_num_2",
-    "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    # "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    "song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour",
 }
 
 feature_display_labels = {
@@ -111,7 +114,8 @@ feature_display_labels = {
     "next_rpt_num_4":        "+4",
     "song_length":           "song\nlen.",
     "target_occurrence_num": "occ.\nnum.",
-    "target_relative_pos":   "rel.\npos.",
+    # "target_relative_pos":   "rel.\npos.",
+    "target_absolute_pos":   "pos.",
     "recording_hour":        "t.o.d",
 }
 
@@ -153,6 +157,7 @@ stacked_oob              = []
 stacked_grouped_shap     = []
 stacked_all_features     = []
 valid_bird_indices       = []
+excluded_sample_threshold = []
 
 for ax_idx, bird_num in enumerate(birds):
     bird_dir = os.path.join(BASE_DIR, f"bird_{bird_num}")
@@ -164,6 +169,8 @@ for ax_idx, bird_num in enumerate(birds):
     for syl in all_sylls:
         syl_dir = os.path.join(bird_dir, syl)
         r2, sample, oob, tstd = read_r2_score(syl_dir, bird_num, syl)
+        if sample is not None and sample < MIN_SAMPLE_SIZE:
+            excluded_sample_threshold.append((bird_num, syl, sample))
         if (
             r2 is not None and
             sample is not None and sample >= MIN_SAMPLE_SIZE and
@@ -195,10 +202,18 @@ for ax_idx, bird_num in enumerate(birds):
     stacked_oob.append(oob_scores)
     stacked_grouped_shap.append(grouped_shap_per_syl)
     stacked_all_features.append(sorted(all_grouped_features))
+
+print(f"\n[EXCLUDED FOR SAMPLE-SIZE THRESHOLD: n < {MIN_SAMPLE_SIZE}]")
+if excluded_sample_threshold:
+    for bird_num, syl, sample in excluded_sample_threshold:
+        print(f"  Bird {bird_num}, syllable {syl}: n={sample}")
+else:
+    print("  None")
+
 if not valid_bird_indices:
     sys.exit(
         "ERROR: No Random Forest model output found for any bird.\n"
-        "Please run rf_by_phrase.py for each bird (1-6) first, then re-run this script."
+        "Please run rf_by_phrase.py for each bird (1-8) first, then re-run this script."
     )
 
 missing = [birds[i] for i in range(len(birds)) if i not in valid_bird_indices]
@@ -271,7 +286,7 @@ for ax_idx in valid_bird_indices:
     for syl in stacked_bird_sylls[ax_idx]:
         xs = list(range(len(feature_groups_global)))
         ys = [stacked_grouped_shap[ax_idx].get(syl, {}).get(g, 0) for g in feature_groups_global]
-        ax4.scatter(xs, ys, marker=marker, s=40, color="black",
+        ax4.scatter(xs, ys, marker=marker, s=20, color="#808080",
                     alpha=0.7, edgecolors="black", linewidths=0.5, zorder=3)
 
 label_to_idx = collections.defaultdict(list)
@@ -294,9 +309,9 @@ bird_legend = [
 ax4.legend(handles=bird_legend, frameon=False, fontsize=11, loc="upper right")
 
 fig4.tight_layout()
-fig4.savefig(os.path.join(SAVE_DIR, "fig_5_rf_summary.png"), dpi=300, bbox_inches="tight")
-fig4.savefig(os.path.join(SAVE_DIR, "fig_5_rf_summary.svg"), bbox_inches="tight")
-print(f"Saved: {os.path.join(SAVE_DIR, 'fig_5_rf_summary.png')}")
+fig4.savefig(os.path.join(SAVE_DIR, "fig_4_c.png"), dpi=300, bbox_inches="tight")
+fig4.savefig(os.path.join(SAVE_DIR, "fig_4_c.svg"), bbox_inches="tight")
+print(f"Saved: {os.path.join(SAVE_DIR, 'fig_4_c.png')}")
 plt.show()
 
 # ── Supplementary version: context ±4 ────────────────────────────────────────
@@ -309,7 +324,8 @@ features_to_keep_supp = {
     "next_syl_2", "next_rpt_num_2",
     "next_syl_3", "next_rpt_num_3",
     "next_syl_4", "next_rpt_num_4",
-    "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    # "song_length", "target_occurrence_num", "target_relative_pos", "recording_hour",
+    "song_length", "target_occurrence_num", "target_absolute_pos", "recording_hour",
 }
 
 all_features_global_supp = set()
@@ -354,7 +370,7 @@ for ax_idx in valid_bird_indices:
     for syl in stacked_bird_sylls[ax_idx]:
         xs = list(range(len(feature_groups_supp)))
         ys = [stacked_grouped_shap[ax_idx].get(syl, {}).get(g, 0) for g in feature_groups_supp]
-        ax_s.scatter(xs, ys, marker=marker, s=40, color="black",
+        ax_s.scatter(xs, ys, marker=marker, s=20, color="#808080",
                      alpha=0.7, edgecolors="black", linewidths=0.5, zorder=3)
 
 label_to_idx_s = collections.defaultdict(list)
@@ -379,8 +395,25 @@ ax_s.legend(handles=bird_legend_s, frameon=False, fontsize=11, loc="upper right"
 fig_s.tight_layout()
 supp2_dir = os.path.join(REPO_ROOT, "figures", "Supplementary", "Supp_3")
 os.makedirs(supp2_dir, exist_ok=True)
-supp2_path = os.path.join(supp2_dir, "supp_3.png")
+supp2_path = os.path.join(supp2_dir, "supp_3_b.png")
 fig_s.savefig(supp2_path, dpi=300, bbox_inches="tight")
 fig_s.savefig(supp2_path.replace('.png', '.svg'), bbox_inches="tight")
 print(f"Saved: {supp2_path}")
 plt.show()
+
+all_data_point_y = [
+    stacked_grouped_shap[ax_idx].get(syl, {}).get(group, 0)
+    for ax_idx in valid_bird_indices
+    for syl in stacked_bird_sylls[ax_idx]
+    for group in feature_groups_global
+]
+supp_data_point_y = [
+    stacked_grouped_shap[ax_idx].get(syl, {}).get(group, 0)
+    for ax_idx in valid_bird_indices
+    for syl in stacked_bird_sylls[ax_idx]
+    for group in feature_groups_supp
+]
+print("\nHIGHEST DATA-POINT Y VALUES:")
+print(f"  Main panel: {max(all_data_point_y):.6f}")
+print(f"  Supplementary panel: {max(supp_data_point_y):.6f}")
+print(f"  Overall: {max(all_data_point_y + supp_data_point_y):.6f}")
