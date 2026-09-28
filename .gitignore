@@ -3,7 +3,6 @@ __pycache__/
 # Ignore all data, figures, and output files
 /figures/
 /output/
-*.csv
 *.png
 *.jpg
 *.jpeg
