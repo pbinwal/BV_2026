@@ -8,3 +8,11 @@ In bird_2_df.csv, every 'a' has been expanded to 'ga' in the song column to
 reflect the true syllable composition. However, the onsets and offsets columns
 still reflect the original single-chunk segmentation — there is one onset/offset
 pair for the 'ga' chunk, not separate values for 'g' and 'a'.
+
+
+Acoustic features
+
+We report **raw** mean pitch (Hz) and mean spectral entropy for each syllable.
+The **acoustic distances**, however, were **not** computed on these raw values.
+They were computed in a **z-scored** feature space, so that pitch (Hz) and
+entropy (unitless) contribute on a comparable scale.
